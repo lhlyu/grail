@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>hello world</title>
+    <script src="../../phaser.min.js"></script>
+</head>
+<body>
+<script>
+    var config = {
+        type: Phaser.Auto,
+        width: 800,
+        height: 600,
+        physics:{
+            default: 'arcade',
+            arcade: {
+                // 重力
+                gravity: {
+                    y: 100
+                }
+            }
+        },
+        // 场景
+        scene:{
+            preload: preload,
+            create: create
+        }
+    }
+    var game = new Phaser.Game(config)
+
+    function preload(){
+        this.load.image('red','http://labs.phaser.io/assets/particles/red.png')
+        this.load.setBaseURL("https://raw.githubusercontent.com/lhlyu/beacon/master")
+        this.load.image('sky','static/img/beacon.jpg')
+        this.load.image('logo','static/img/default.gif')
+    }
+
+    function create(){
+        // 加入图片(x,y) 图片中心的位置
+        this.add.image(400,300,'sky')
+        // 加入粒子
+        var particles = this.add.particles('red')
+        // 创建粒子发射器
+        var emitter = particles.createEmitter({
+            speed: 100,
+            // 范围
+            scale: {
+                start: 1,
+                end: 0
+            },
+            blendMode:'ADD'
+        })
+        // 物理现象加入图片
+        var logo = this.physics.add.image(400,100,'logo')
+        // 设置速度 (x,y)
+        logo.setVelocity(100,300)
+        // 设置弹跳 (x,y)
+        logo.setBounce(1,1)
+        // 设置边界
+        logo.setCollideWorldBounds(true)
+        // 粒子跟随logo
+        emitter.startFollow(logo)
+    }
+
+</script>
+</body>
+</html>

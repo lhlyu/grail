@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>place-on-a-circle-multi</title>
+    <script src="../../phaser.min.js"></script>
+</head>
+<body>
+<script>
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        background: '#2d2d2d',
+        scene: {
+            preload: preload,
+            create: create,
+            update:update
+        }
+    };
+
+    var group
+    var tween
+
+    var game = new Phaser.Game(config);
+
+    function preload (){
+        this.load.setBaseURL('http://labs.phaser.io')
+        // 加载精灵表
+        // 设置每帧17 * 17
+        this.load.spritesheet('balls','assets/sprites/balls.png',{
+            frameWidth: 17,
+            frameHeight: 17,
+        })
+    }
+
+
+    function create (){
+        // 几何，添加一个圆，坐标 x,y 半径 r
+        var circle = new Phaser.Geom.Circle(400,300,220)
+        // 创建一个组  红蓝黄，再重复十次，一共是 （3 ） * （1 + 10） = 33 个
+        // 重复是在原来的数量上再增加
+        group = this.add.group({
+            key: 'balls',
+            frame: [0,1,5],
+            repeat: 10
+        })
+        // 将组放在圆上
+        Phaser.Actions.PlaceOnCircle(group.getChildren(),circle)
+        // // 添加一个补间动画，计数器
+        tween = this.tweens.addCounter({
+            from: 220,               // 半径从 220 变成 100
+            to: 100,                  //
+            duration: 3000,           // 持续时间
+            delay: 2000,              // 延迟时间
+            ease: 'Sine.easeInOut',   // 动画曲线
+            repeat: 1,               // 重复 -1 无限重复
+            yoyo: true                // 开启反向动画
+        })
+    }
+
+    function update(){
+        // 绕距离旋转
+        //  圆圈   坐标   旋转速度   动画
+        // tween.getValue() 获取的值[100,220] 作为 旋转距离，即旋转半径
+        Phaser.Actions.RotateAroundDistance(group.getChildren(),{
+            x: 400,
+            y: 300
+        },0.01,tween.getValue())
+    }
+  // https://photonstorm.github.io/phaser3-docs/Phaser.Types.Tweens.html
+</script>
+</body>
+</html>

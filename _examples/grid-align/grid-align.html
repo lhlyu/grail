@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>grid-align</title>
+    <script src="../../phaser.min.js"></script>
+</head>
+<body>
+<script>
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        background: '#2d2d2d',
+        scene: {
+            preload: preload,
+            create: create
+        }
+    };
+
+    var game = new Phaser.Game(config);
+
+    function preload (){
+        this.load.setBaseURL('http://labs.phaser.io')
+        // 加载精灵表
+        // 设置每帧32 * 24
+        this.load.spritesheet('diamonds','assets/sprites/diamonds32x24x5.png',{
+            frameWidth: 32,
+            frameHeight: 24,
+        })
+    }
+
+
+    function create (){
+        var group = this.add.group({
+            key: 'diamonds',
+            frame: [0,1,2,3,4],
+            // 每帧数量
+            frameQuantity:20
+        })
+        // 网格 10 * 10 每个单元的尺寸 32 * 32 ，初始位置 （100,100）
+        // 把  5 * 20 个精灵 放到 下面规格的 10 *10 网格里
+        Phaser.Actions.GridAlign(group.getChildren(),{
+            width: 10,
+            height: 10,
+            cellWidth: 32,
+            cellHeight: 32,
+            x:100,
+            y:100
+        })
+    }
+
+</script>
+</body>
+</html>
