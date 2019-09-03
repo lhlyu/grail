@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>index</title>
+    <script src="/phaser.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<script>
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+		physics:{
+			default: 'arcade',
+			arcade:{
+				debug: false,
+				gravity: {
+					y:0
+				}
+			}
+		},
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var game = new Phaser.Game(config);
+
+    function preload (){
+		this.load.image('red','assets/red.png')
+		this.load.image('black','assets/black.png')
+		this.load.image('star','assets/star.png')
+    }
+
+    function create (){
+		var self = this 
+		this.myTeam = null
+		this.socket = io()
+		// 创建一个组，加载其他玩家
+		this.otherPlayers = this.physics.add.group()
+		this.socket.on('currentPlayers',function(players){
+			Object.keys(players).forEach(function(id){
+				self.myTeam = players[self.socket.id].team
+				if(players[id].playerId == self.socket.id){
+					addPlayer(self,players[id])
+				}else{
+					addOtherPlayers(self,players[id])
+				}
+			})
+		})
+		this.socket.on('newPlayer',function(playerInfo){
+			addOtherPlayers(self,playerInfo)
+		})
+		this.socket.on('disconnect',function(playerId){
+			self.otherPlayers.getChildren().forEach(function(otherPlayer){
+				if(playerId === otherPlayer.playerId){
+					otherPlayer.destroy()
+				}
+			})
+		})
+		this.socket.on('playerMoved',function(playerInfo){
+			self.otherPlayers.getChildren().forEach(function(otherPlayer){
+				if(playerInfo.playerId === otherPlayer.playerId){
+					otherPlayer.setRotation(playerInfo.rotation);
+					otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+				}
+			})
+		})
+		// 玩家输入
+		this.cursors = this.input.keyboard.addKeys('A,W,S,D');
+    }
+	
+	function addPlayer(self,playerInfo){
+		// setOrigin - 游戏对象的原点设置在对象的中间而不是左上角
+		self.ship = self.physics.add.image(playerInfo.x,playerInfo.y,'red').setOrigin(0.5,0.5).setDisplaySize(53,40)
+		self.ship.setTint(0x00ff00)
+
+		// 设置拖动的速度
+		self.ship.setDrag(100)
+		// 设置拖动的角速度
+		self.ship.setAngularDrag(100)
+		// 设置最大速度
+		self.ship.setMaxVelocity(200)
+	}
+	
+	function addOtherPlayers(self,playerInfo){
+		// setOrigin - 游戏对象的原点设置在对象的中间而不是左上角
+		const otherPlayer = self.add.sprite(playerInfo.x,playerInfo.y,'black').setOrigin(0.5,0.5).setDisplaySize(53,40)
+		if(playerInfo.team === self.myTeam){
+			otherPlayer.setTint(0x16a085)    // 队友
+		}else{
+			otherPlayer.setTint(0xff0000)     // 对手
+		}
+		otherPlayer.playerId = playerInfo.playerId
+		self.otherPlayers.add(otherPlayer)
+	}
+
+    function update (){
+		if (this.ship) {
+			// 这里是调整方向
+			if(this.cursors.A.isDown){
+			  // 左键按下 逆时针
+			  this.ship.setAngularVelocity(-100);
+			}
+			if(this.cursors.D.isDown){
+			  // 右键按下 顺时针
+			  this.ship.setAngularVelocity(100);
+			}
+			if(this.cursors.W.isDown){
+			  // 前进
+			  this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100,this.ship.body.acceleration);
+			}
+			if(this.cursors.S.isDown){
+			  // 设置加速度为 0
+			  this.ship.setAcceleration(0);
+			}
+			// 这里是如果玩家出了边界就从反向延长线的方向出来
+			this.physics.world.wrap(this.ship, 5)
+			
+			// 通信
+			var x = this.ship.x
+			var y = this.ship.y 
+			var r = this.ship.rotation 
+			if(this.ship.oldPosition && (x != this.ship.oldPosition.x || r != this.ship.oldPosition.r || r != this.ship.oldPosition.r)){
+				this.socket.emit('playerMovement',{
+					x: x,
+					y: y,
+					rotation: r
+				})
+			}
+			this.ship.oldPosition = {
+				x: x,
+				y: y,
+				r: r
+			}
+		}
+    }
+</script>
+</body>
+</html>
